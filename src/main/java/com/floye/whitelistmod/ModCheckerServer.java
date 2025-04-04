@@ -25,78 +25,70 @@ public class ModCheckerServer implements DedicatedServerModInitializer {
 
 	private static List<String> allowedMods;
 	private static List<String> necessaryMods;
-	private static String language = "en_us"; // Langue par défaut
 
 	@Override
 	public void onInitializeServer() {
-		// Utilisation de la traduction pour le message d'initialisation
-		System.out.println(getTranslatedMessage("modchecker.server.initialized"));
-		loadConfig();
+		System.out.println("[ModChecker] ModCheckerServer initialisé."); // Log d'initialisation
+		loadConfig(); // Charger la configuration au démarrage
 
-		// Enregistrement des Payloads pour client -> serveur et serveur -> client
+		// Enregistrement des Payloads pour les messages serveur -> client et client -> serveur
 		PayloadTypeRegistry.playC2S().register(ClientModListPayload.ID, ClientModListPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(ServerHelloPayload.PACKET_ID, ServerHelloPayload.PACKET_CODEC);
 
-		// Réception des mods du client
+		// Réception des mods du client et gestion de la connexion
 		ServerPlayNetworking.registerGlobalReceiver(ClientModListPayload.ID, (payload, context) -> {
 			final ServerPlayerEntity player = context.player();
 			List<String> clientMods = payload.modIds();
 
-			// Utilisation des traductions pour les logs
-			System.out.println(getTranslatedMessage("modchecker.client.mods_received", clientMods));
-			System.out.println(getTranslatedMessage("modchecker.client.mods_detected", player.getName().getString(), clientMods));
+			System.out.println("[ModChecker] Liste des mods reçus du client : " + clientMods);
+			System.out.println("[ModChecker] Mods détectés chez le client " + player.getName().getString() + ": " + clientMods);
 
 			final RejectionResult rejectionResult = isClientAllowed(clientMods);
-
 			if (!rejectionResult.allowed()) {
-				// Construction du message de rejet avec les traductions
-				StringBuilder rejectMessage = new StringBuilder(getTranslatedMessage("modchecker.connection.response.denied", ""));
+				final StringBuilder rejectMessage = new StringBuilder("[WhitelistMod]");
 
 				if (!rejectionResult.missingMods().isEmpty()) {
-					rejectMessage.append(" ")
-							.append(getTranslatedMessage("modchecker.connection.reason.missing_mods", rejectionResult.missingMods()));
+					rejectMessage.append("Mods requis manquants: ").append(rejectionResult.missingMods()).append(". ");
 				}
 				if (!rejectionResult.extraMods().isEmpty()) {
-					rejectMessage.append(" ")
-							.append(getTranslatedMessage("modchecker.connection.reason.extra_mods", rejectionResult.extraMods()));
+					rejectMessage.append("Mods non autorisés: ").append(rejectionResult.extraMods()).append(". Merci d'ouvrir un ticket pour les faire valider. ");
 				}
 
-				// Déconnexion du joueur avec un message localisé
 				context.server().execute(() -> player.networkHandler.disconnect(Text.literal(rejectMessage.toString())));
-			} else {
-				// Envoyer un message d'acceptation avec une traduction
-				ServerHelloPayload responsePayload = new ServerHelloPayload(true, getTranslatedMessage("modchecker.connection.response.success"));
+
+		} else {
+				ServerHelloPayload responsePayload = new ServerHelloPayload(true, "Connexion autorisée");
 				ServerPlayNetworking.send(player, responsePayload);
-				System.out.println(getTranslatedMessage("modchecker.connection.allowed", player.getName().getString()));
 			}
 		});
+
 	}
 
+	// Chargement de la configuration des mods autorisés
 	private void loadConfig() {
-		// Chemin du fichier de configuration
-		File configFile = FabricLoader.getInstance().getConfigDir().resolve("Whitelistmod/Whitelistmod_config.json").toFile();
+		File configFile = FabricLoader.getInstance().getConfigDir().resolve("modchecker/allowed_mods.json").toFile();
 		File configDir = configFile.getParentFile();
 
 		if (!configFile.exists()) {
-			System.out.println("[ModChecker] Configuration file not found. Creating default configuration.");
+			System.out.println("[ModChecker] Fichier de configuration non trouvé. Création du fichier par défaut.");
+			// Créer le dossier de configuration s'il n'existe pas
 			if (!configDir.exists()) {
 				configDir.mkdirs();
 			}
-
-			// Création de la configuration par défaut
+			// Créer la configuration par défaut
 			ModCheckerConfig defaultConfig = new ModCheckerConfig();
 			defaultConfig.USE_WHITELIST_ONLY = true;
-			defaultConfig.CLIENT_MOD_NECESSARY = List.of("whitelistmod");
-			defaultConfig.CLIENT_MOD_WHITELIST = List.of("fabric-api");
-			defaultConfig.CLIENT_MOD_BLACKLIST = List.of("aristois", "bleachhack");
-			defaultConfig.LANGUAGE = "en_us"; // Langue par défaut
+			defaultConfig.CLIENT_MOD_NECESSARY = Arrays.asList("whitelistmod");
+			defaultConfig.CLIENT_MOD_WHITELIST = Arrays.asList("fabric-api");
+			defaultConfig.CLIENT_MOD_BLACKLIST = Arrays.asList("aristois", "bleachhack");
 
+			// Sauvegarder la configuration par défaut dans le fichier
 			try (FileWriter writer = new FileWriter(configFile)) {
 				Gson gson = new GsonBuilder().setPrettyPrinting().create();
 				gson.toJson(defaultConfig, writer);
-				System.out.println("[ModChecker] Default configuration created: Whitelistmod_config.json");
+				System.out.println("[ModChecker] Fichier de configuration par défaut créé avec succès.");
 			} catch (IOException e) {
-				System.err.println("[ModChecker] Error creating default configuration: " + e.getMessage());
+				System.err.println("Erreur lors de la création du fichier de configuration par défaut: " + e.getMessage());
 				e.printStackTrace();
 			}
 		}
@@ -104,26 +96,30 @@ public class ModCheckerServer implements DedicatedServerModInitializer {
 		if (configFile.exists()) {
 			try (FileReader reader = new FileReader(configFile)) {
 				Gson gson = new Gson();
+				System.out.println("[ModChecker] Chargement de la configuration depuis " + configFile.getAbsolutePath());
 				ModCheckerConfig config = gson.fromJson(reader, ModCheckerConfig.class);
 
 				allowedMods = config.CLIENT_MOD_WHITELIST;
 				necessaryMods = config.CLIENT_MOD_NECESSARY;
-				language = config.LANGUAGE; // Charger la langue depuis la configuration
 
-				System.out.println("[ModChecker] Configuration loaded. Language set to: " + language);
+				System.out.println("[ModChecker] allowedMods chargés: " + allowedMods);
+				System.out.println("[ModChecker] necessaryMods chargés: " + necessaryMods);
+				System.out.println("[ModChecker] USE_WHITELIST_ONLY: " + config.USE_WHITELIST_ONLY);
+				System.out.println("[ModChecker] CLIENT_MOD_BLACKLIST: " + config.CLIENT_MOD_BLACKLIST);
+
+
 			} catch (IOException e) {
-				System.err.println("[ModChecker] Error reading configuration: " + e.getMessage());
+				System.err.println("Erreur lors de la lecture de la config ModChecker: " + e.getMessage());
 				e.printStackTrace();
-				allowedMods = List.of("fabric-api");
-				necessaryMods = List.of("whitelistmod");
-				language = "en_us"; // Langue par défaut
+				allowedMods = Arrays.asList("fabric-api");
+				necessaryMods = Arrays.asList("mod_whitelist");
+				System.out.println("[ModChecker] Configuration par défaut utilisée.");
 			}
+		} else {
+			System.out.println("[ModChecker] Fichier de configuration non trouvé. Utilisation de la configuration par défaut.");
+			allowedMods = Arrays.asList("fabric-api");
+			necessaryMods = Arrays.asList("mod_whitelist");
 		}
-	}
-
-	private String getTranslatedMessage(String key, Object... args) {
-		// Crée une traduction basée sur la langue sélectionnée
-		return Text.translatable(key, args).getString();
 	}
 
 	private RejectionResult isClientAllowed(List<String> clientMods) {
@@ -138,7 +134,7 @@ public class ModCheckerServer implements DedicatedServerModInitializer {
 
 		// Vérifier les mods en trop
 		Set<String> allowedClientMods = new HashSet<>(clientModsSet);
-		allowedClientMods.removeAll(necessaryModsSet); // Retirer les mods nécessaires
+		allowedClientMods.removeAll(necessaryModsSet); // Retirer les mods nécessaires pour ne pas les compter comme en trop
 		List<String> extraUnauthorizedMods = allowedClientMods.stream()
 				.filter(mod -> !allowedModsSet.contains(mod))
 				.collect(Collectors.toList());
@@ -150,6 +146,7 @@ public class ModCheckerServer implements DedicatedServerModInitializer {
 
 		return new RejectionResult(true, List.of(), List.of()); // Tout est bon
 	}
+
 
 	private record RejectionResult(boolean allowed, List<String> missingMods, List<String> extraMods) {}
 }
