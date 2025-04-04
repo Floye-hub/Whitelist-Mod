@@ -15,10 +15,12 @@
 	"icon": "assets/whitelistmod/icon.png",
 	"environment": "*",
 	"entrypoints": {
-		"Server": [
-			"com.floye.whitelistmod.ModCheckerServer"
+		"client": [
+			"com.floye.whitelistmod.ModCheckerClient"
 		],
-		"Client": ["com.floye.whitelistmod.ModCheckerClient"]
+		"server": [
+			"com.floye.whitelistmod.ModCheckerServer"
+		]
 	},
 	"mixins": [
 		"whitelistmod.mixins.json"
