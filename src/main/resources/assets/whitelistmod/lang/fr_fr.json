@@ -1,0 +1,6 @@
+{
+  "mod.whitelistmod.title": "WhitelistMod",
+  "mod.whitelistmod.connection_refused": "Connection refused",
+  "mod.whitelistmod.missing_mods": "Missing required mods: %s",
+  "mod.whitelistmod.unauthorized_mods": "Unauthorized mods: %s"
+}

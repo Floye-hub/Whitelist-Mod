@@ -1,0 +1,20 @@
+{
+  "modchecker.server.initialized": "[ModChecker] ModCheckerServer initialized.",
+  "modchecker.config.loading": "[ModChecker] Loading configuration from {path}.",
+  "modchecker.config.not_found": "[ModChecker] Configuration file not found. Creating default configuration file.",
+  "modchecker.config.default_created": "[ModChecker] Default configuration file successfully created.",
+  "modchecker.config.loading_error": "Error while reading ModChecker configuration: {error}",
+  "modchecker.config.default_used": "[ModChecker] Using default configuration.",
+  "modchecker.config.loaded_allowed_mods": "[ModChecker] Allowed mods loaded: {mods}",
+  "modchecker.config.loaded_necessary_mods": "[ModChecker] Necessary mods loaded: {mods}",
+  "modchecker.config.use_whitelist_only": "[ModChecker] USE_WHITELIST_ONLY: {value}",
+  "modchecker.config.loaded_blacklist": "[ModChecker] CLIENT_MOD_BLACKLIST: {mods}",
+  "modchecker.client.mods_received": "[ModChecker] Mod list received from client: {mods}",
+  "modchecker.client.mods_detected": "[ModChecker] Mods detected for client {player}: {mods}",
+  "modchecker.connection.denied": "[ModChecker] Connection denied for {player}.",
+  "modchecker.connection.reason.missing_mods": "Missing required mods: {mods}",
+  "modchecker.connection.reason.extra_mods": "Unauthorized mods detected: {mods}. Please open a ticket to request approval.",
+  "modchecker.connection.allowed": "[ModChecker] Connection allowed for {player}.",
+  "modchecker.connection.response.success": "Connection allowed",
+  "modchecker.connection.response.denied": "Connection denied: {reason}"
+}
