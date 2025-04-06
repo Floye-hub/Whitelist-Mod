@@ -20,7 +20,7 @@
 
 ## 📦 Installation
 
-1. Place the mod JAR in your server's `mods` folder
+1. Place the mod JAR in your server's and client's `mods` folder
 2. Restart the server to generate the config file
 3. Configure your lists in `config/modchecker/allowed_mods.json`
 
@@ -45,6 +45,8 @@
     "aristois"
   ]
 }
+```
+
 🔍 Finding Mod IDs
 Players can find their mod IDs in the client logs (logs/latest.log) by searching for:
 
